@@ -23,14 +23,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-data class UserProfileState(
-    val listOfPosts: List<MediaModel?> = listOf()
-)
-
-sealed class UserProfileEvents {
-    data class UpdateMostVisibleItem(val postId: String): UserProfileEvents()
-}
-
 @HiltViewModel
 class LazyListViewModel
 @Inject
