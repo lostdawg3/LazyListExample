@@ -1,6 +1,7 @@
 package com.gsmooth.lazylistexample.presentation.userProfile
 
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,6 +23,7 @@ import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
@@ -86,10 +89,21 @@ fun UserPostView(
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoComponentView(
     post: MediaModel
 ) {
+    val context = LocalContext.current
+
+    // Remember the PlayerView for this composable
+    val currentPlayerView = remember {
+        PlayerView(context).apply {
+            player = post.mediaPlayer
+            useController = false
+            setEnableComposeSurfaceSyncWorkaround(true)
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,25 +111,33 @@ fun VideoComponentView(
     ) {
         AndroidView(
             factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = post.mediaPlayer
-                    useController = false
-                }
+                currentPlayerView
+//                PlayerView(ctx).apply {
+//                    player = post.mediaPlayer
+//                    useController = false
+//                }
             },
             update = { playerView ->
                 if (post.isPostVisible) {
                     val isPlaying = post.mediaPlayer?.isPlaying == true
                     if (!isPlaying) {
                         val lastPosition = post.mediaPlayer?.currentPosition ?: 0L
-                        post.mediaPlayer?.seekTo(lastPosition)
-                        post.mediaPlayer?.playWhenReady = true
-                        post.mediaPlayer?.play()
+                        playerView.player?.seekTo(lastPosition)
+                        playerView.player?.playWhenReady = true
+                        playerView.player?.play()
+//                        post.mediaPlayer?.seekTo(lastPosition)
+//                        post.mediaPlayer?.playWhenReady = true
+//                        post.mediaPlayer?.play()
                     }
                 } else {
-                    post.mediaPlayer?.playWhenReady = false
-                    post.mediaPlayer?.pause()
+                    playerView.player?.playWhenReady = false
+                    playerView.player?.pause()
+//                    post.mediaPlayer?.playWhenReady = false
+//                    post.mediaPlayer?.pause()
                 }
-            }
+            },
+            onReset = { playerView ->
+                playerView.player = null }
         )
     }
 }
